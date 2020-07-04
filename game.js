@@ -4,7 +4,11 @@ var config = {
   height: 600,
   physics: {
     default: "arcade",
-    arcade: {},
+    arcade: {
+      gravity: {
+        // y: 0,
+      },
+    },
   },
   scene: {
     preload: preload,
@@ -15,44 +19,87 @@ var config = {
 
 var game = new Phaser.Game(config);
 
-var hlf;
-var cursors;
-var speed;
-var step;
-
+var hlf = {
+  gameObject: {},
+  animation: {},
+  speedSteps: 120,
+  start: () => {
+    hlf.gameObject.setVelocityX(hlf.speedSteps);
+  },
+  stop: () => {
+    hlf.gameObject.setVelocityX(0);
+  },
+  update: () => {
+    
+  },
+};
+var missionText;
+var hintText;
+var targetPosition = 400;
+var points = 0;
+var missionCompleted = false;
 function preload() {
-  this.load.image("firecar", "firecar.png");
+  this.load.spritesheet("firecar", "firecar_sprite.png", {
+    frameWidth: 218,
+    frameHeight: 66,
+  });
 }
 
 function create() {
-  hlf = this.physics.add.image(200, 200, "firecar");
-  cursors = this.input.keyboard.createCursorKeys();
+  hlf.gameObject = this.physics.add.sprite(-218, 200, "firecar");
   speed = 0;
-  step = 20;
+  hlf.animation = this.anims.create({
+    key: "blue",
+    frames: this.anims.generateFrameNumbers("firecar", { start: 0, end: 3 }),
+    frameRate: 6,
+    repeat: -1,
+  });
+
+  this.input.keyboard.on("keydown-SPACE", callFireFighters.bind(this));
+  missionText = this.add.text(20, 20, "Mission: -", {
+    fontSize: "20px",
+    fill: "#FFFFFF",
+  });
+  hintText = this.add.text(50, 300, "", {
+    fontSize: "25px",
+    fill: "#E72E21",
+  });
+
+  pointText = this.add.text(
+    20,
+    config.height - 20,
+    "Punkte: " + points.toString(),
+    {
+      fontSize: "15px",
+      fill: "#FFFFFF",
+    }
+  );
+
+  this.time.addEvent({
+    delay: Phaser.Math.Between(5000, 6000),
+    callback: createMission.bind(this),
+  });
 }
 
 function update() {
-  if (cursors.right.isDown) {
-    speed += step;
-  } else if (cursors.left.isDown) {
-    speed -= step;
+  if (hlf.gameObject.x >= targetPosition && !missionCompleted) {
+    hlf.stop();
+    hintText.text = "Super die Feuerwehr ist da!";
+    points += 100;
+    missionCompleted = true;
   }
 
-  if (cursors.space.isDown) {
-    speed = 0;
-  }
+  pointText.text = "Punkte: " + points.toString();
+  hlf.update();
+}
 
-  if (cursors.down.isDown) {
-    hlf.setAngle(90);
-  } else if (cursors.up.isDown) {
-    hlf.setAngle(270);
-  }
+function createMission(event) {
+  missionText.text = "Mission: 🔥 Es brennt! Rufe die Feuerwehr";
+  hintText.text = "Drücke die Leertaste um die Feuerwehr zu rufen";
+}
 
-  if (speed > 150) {
-    speed = 150;
-  } else if (speed < -30) {
-    speed = -30;
-  }
-
-  hlf.setVelocityX(speed);
+function callFireFighters(event) {
+  this.anims.play("blue", hlf.gameObject);
+  // hlf.speed = hlf.speedSteps;
+  hlf.start();
 }
