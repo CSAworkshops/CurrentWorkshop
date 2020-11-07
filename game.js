@@ -6,8 +6,7 @@ var config = {
     default: "arcade",
     arcade: {
       gravity: {
-        x: 0,
-        y: 0,
+        y: 30,
       },
     },
   },
@@ -19,112 +18,62 @@ var config = {
 };
 
 var game = new Phaser.Game(config);
-var collectedFish = 0;
-var fishTextValue = "Collected: ";
-var penguin;
-var keyW;
-var keyA;
-var keyS;
-var keyD;
-var fishGroup;
-var fishText;
-var spawnArea;
 
+var player;
+var spaceKey;
 function preload() {
-  this.load.image("penguin", "penguin.png");
-  this.load.image("fish", "fish_barrel.png");
+  this.load.image("player", "/assets/p3_front.png");
+  this.load.image("metalCenter", "/assets/metalCenter.png");
 }
 
 function create() {
-  penguin = this.physics.add.image(200, 60, "penguin");
-  penguin.setScale(0.4, 0.4);
-  penguin.setCollideWorldBounds(true);
+  player = this.physics.add.image(100, 100, "player");
 
-  fishGroup = this.physics.add.group({
-    key: "fish",
-    quantity: 10,
-  });
+  let platforms = this.physics.add.staticGroup();
+  let platform = platforms.create(100, 200, "metalCenter");
 
-  this.physics.add.overlap(penguin, fishGroup, fishCollect.bind(this));
+  this.physics.add.collider(player, platforms);
+  spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-  fishText = this.add.text(20, 20, fishTextValue + collectedFish);
+  this.input.keyboard.on("keydown-W", setUp.bind(this));
+  this.input.keyboard.on("keydown-A", setLeft.bind(this));
+  this.input.keyboard.on("keydown-S", setDown.bind(this));
+  this.input.keyboard.on("keydown-D", setRight.bind(this));
 
-  spawnArea = new Phaser.Geom.Rectangle(
-    5,
-    100,
-    config.width - 10,
-    config.height - 200
-  );
-
-  fishGroup.getChildren().forEach((fish) => placeInSpawnArea(fish, spawnArea));
-
-  keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
-  keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-  keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
-  keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+  this.input.keyboard.on("keyup-W", unsetUp.bind(this));
+  this.input.keyboard.on("keyup-A", unsetLeft.bind(this));
+  this.input.keyboard.on("keyup-S", unsetDown.bind(this));
+  this.input.keyboard.on("keyup-D", unsetRight.bind(this));
 }
 
 function update() {
-  if (keyW.isDown) {
-    penguin.y -= 3;
-  }
-  if (keyA.isDown) {
-    penguin.x -= 3;
-  }
-  if (keyS.isDown) {
-    penguin.y += 3;
-  }
-  if (keyD.isDown) {
-    penguin.x += 3;
+  if (spaceKey.isDown) {
+    // player.x += 3;
   }
 }
 
-function fishCollect(penguin, fish) {
-  fish.disableBody(true, true);
-  // placeInSpawnArea(fish, spawnArea);
-  collectedFish += 10;
-  fishText.text = fishTextValue + collectedFish;
-
-  this.time.addEvent({
-    delay: Phaser.Math.Between(1000, 3000),
-    callback: (event) => {
-      placeInSpawnArea(fish, spawnArea);
-      fish.enableBody(false, 0, 0, true, true);
-    },
-  });
+function setUp(event) {
+  player.setVelocityY(-50);
+}
+function setLeft(event) {
+  player.setVelocityX(-50);
+}
+function setDown(event) {
+  player.setVelocityY(50);
+}
+function setRight(event) {
+  player.setVelocityX(50);
 }
 
-function placeInSpawnArea(gameObj, area) {
-  let children = fishGroup.getChildren();
-  do {
-    gameObj.x = Phaser.Math.Between(area.x, area.x + area.width);
-    gameObj.y = Phaser.Math.Between(area.y, area.y + area.height);
-  } while (inersectsWithObjects(gameObj, children));
-}
-
-function getRectangleFromObj(gameObj) {
-  return new Phaser.Geom.Rectangle(
-    gameObj.x,
-    gameObj.y,
-    gameObj.width,
-    gameObj.height
-  );
-}
-
-function inersectsWithObjects(gameObj, gameObjects) {
-  let rectangleA = getRectangleFromObj(gameObj);
-  for (let index = 0; index < gameObjects.length; index++) {
-    const childElement = gameObjects[index];
-
-    if (childElement == gameObj) {
-      continue;
-    }
-
-    let rectangleB = getRectangleFromObj(childElement);
-    if (Phaser.Geom.Intersects.RectangleToRectangle(rectangleA, rectangleB)) {
-      return true;
-    }
+function unsetUp(event) {
+    player.setVelocityY(0);
   }
-
-  return false;
-}
+  function unsetLeft(event) {
+    player.setVelocityX(0);
+  }
+  function unsetDown(event) {
+    player.setVelocityY(0);
+  }
+  function unsetRight(event) {
+    player.setVelocityX(0);
+  }
